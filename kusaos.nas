@@ -52,7 +52,7 @@ fin:
 ; メッセージ部分
 msg:
 		DB		0x0a, 0x0a		; 改行を2つ
-		DB		"hello, orld"
+		DB		"hello, I'm kusaOS!"
 		DB		0x0a			; 改行
 		DB		0
 

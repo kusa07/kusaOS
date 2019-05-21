@@ -1,1 +1,1 @@
-..\z_tools\nask.exe kusaos.nas kusaos.img
+..\z_tools\nask.exe ipl.nas ipl.bin ipl.lst

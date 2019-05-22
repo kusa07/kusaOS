@@ -1,38 +1,47 @@
+#変数設定
+TOOLPATH = ../z_tools/
+MAKE	 = $(TOOLPATH)make.exe -r
+NASK	 = $(TOOLPATH)nask.exe
+EDIMG	 = $(TOOLPATH)edimg.exe
+IMGTOL	 = $(TOOLPATH)imgtol.com
+COPY	 = copy
+DEL		 = del
+
 #デフォルト動作
 
 default:
-			../z_tools/make.exe img
+			$(MAKE) img
 
 #ファイル生成規則
 
 ipl.bin:	ipl.nas Makefile
-			../z_tools/nask.exe ipl.nas ipl.bin ipl.lst
+			$(NASK) ipl.nas ipl.bin ipl.lst
 
 kusaOS.img:	ipl.bin	Makefile
-			../z_tools/edimg.exe imgin:../z_tools/fdimg0at.tek \
+			$(EDIMG) imgin:../z_tools/fdimg0at.tek \
 				wbinimg src:ipl.bin len:512 from:0 to:0 imgout:kusaOS.img
 
 #コマンド
 
 asm:
-			../z_tools/make.exe -r ipl.bin
+			$(MAKE) ipl.bin
 
 img:
-			../z_tools/make.exe -r kusaOS.img
+			$(MAKE) kusaOS.img
 
 run:		
-			../z_tools/make.exe img
-			copy kusaOS.img ..\z_tools\qemu\fdimage0.bin
-			../z_tools/make.exe -C ../z_tools/qemu
+			$(MAKE) img
+			$(COPY) kusaOS.img ..\z_tools\qemu\fdimage0.bin
+			$(MAKE) -C ../z_tools/qemu
 
 install:
-			../z_tools/make.exe img
-			../z_tools/imgtol.com w a: kusaOS.img
+			$(MAKE) img
+			$(IMGTOL) w a: kusaOS.img
 
 clean:
-			-del ipl.bin
-			-del ipl.lst
+			$(DEL) ipl.bin
+			$(DEL) ipl.lst
 
 src_only:
-			../z_tools/make.exe clean
-			-del kusaOS.img
+			$(MAKE) clean
+			$(DEL) kusaOS.img

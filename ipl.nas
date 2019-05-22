@@ -35,7 +35,31 @@ entry:
 		MOV		DS,AX
 		MOV		ES,AX
 
-		MOV		SI,msg			;ソースインデックスにmsg:ラベルのメモリ番地を入れる
+; ディスクを読み込む
+		MOV		AX,0x0820		; 0x8000~0x81ffまでの512バイトは後でブートセクタの内容をいれるので、0x8200を使う。
+		MOV		ES,AX			; ESには直接値を入れられないのでAXを介して入れている。
+		MOV		CH,0			; シリンダ0
+		MOV		DH,0			; ヘッド0
+		MOV		CL,2			; セクタ2 これでブートセクタの次が読み込める
+
+		MOV		AH,0x02			; AH=0x02 : ディスク読み込み
+		MOV 	AL,1			; 1セクタ
+		MOV		BX,0			; バッファアドレスのオフセットアドレス(細かいメモリ番地)を指定
+		MOV		DL,0x00			; Aドライブ
+		INT		0x13			; ディスク関連のBIOS機能呼び出し
+		JC		error			; JC命令「Jamp if Carry」　INT0x13でエラーがあるとキャリーフラグが1になる。
+
+		MOV		SI,msg			; ソースインデックスにmsg:ラベルのメモリ番地を入れる
+
+; 読み込みが終わって終わり
+
+fin:
+		HLT						; 何かあるまでCPU停止
+		JMP		fin				; finラベルへ飛ぶので実質無限ループ
+
+error:
+		MOV		SI,msg			; msgラベルのメモリ番地をソースインデックスにセット
+
 putloop:
 		MOV		AL,[SI]			;msgの中身の先頭をALに代入
 		ADD		SI,1			;ソースインデックスに1を足してmsgの次の文字のメモリ番地を示すようにする
@@ -45,9 +69,6 @@ putloop:
 		MOV		BX,15			;BHは0でよく、BLはカラーコードを指定。FFFFは白なので15を入れると0x0000FFFFとなる。
 		INT		0x10			;ビデオ関連のソフトウェア割り込みを呼び出す
 		JMP		putloop			;一文字づつ表示なので、putloopに戻って繰り返す。（0ならfinに抜ける）
-fin:
-		HLT						;CPUを待機状態にする
-		JMP		fin
 
 ; メッセージ部分
 msg:
@@ -59,10 +80,3 @@ msg:
 		RESB	0x7dfe-$			; 0x07dfeまでを0x00で埋める命令
 
 		DB		0x55, 0xaa
-
-; 以下はブートセクタ以外の部分の記述
-
-		;DB		0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
-		;RESB	4600
-		;DB		0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
-		;RESB	1469432

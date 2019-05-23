@@ -1,11 +1,11 @@
 ; kusa-os
 ; TAB=4
 
-		ORG		0x7c00			;プログラムの開始点のメモリ番地を指定する
+		ORG		0x7c00			;プログラムの開始点のメモリ番地を指定する。疑似命令でCPUでの処理は何もしない。
 
 ; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
 
-		JMP		entry			
+		JMP		entry			; 無条件でentryラベルへジャンプ
 		DB		0x90
 		DB		"kusa-IPL"		; ブートセクタの名前を自由に書いてよい（8バイト）
 		DW		512				; 1セクタの大きさ（512にしなければいけない）
@@ -33,7 +33,7 @@ entry:
 		MOV		SS,AX			;AXを代入するということは、イコール0を代入する事と同じ。
 		MOV		SP,0x7c00		;スタックポインタにORG命令で指定したIPLの開始位置を代入
 		MOV		DS,AX
-		MOV		ES,AX
+		;MOV		ES,AX		;突然サイレント削除されている
 
 ; ディスクを読み込む
 		MOV		AX,0x0820		; 0x8000~0x81ffまでの512バイトは後でブートセクタの内容をいれるので、0x8200を使う。
@@ -42,14 +42,24 @@ entry:
 		MOV		DH,0			; ヘッド0
 		MOV		CL,2			; セクタ2 これでブートセクタの次が読み込める
 
-		MOV		AH,0x02			; AH=0x02 : ディスク読み込み
-		MOV 	AL,1			; 1セクタ
-		MOV		BX,0			; バッファアドレスのオフセットアドレス(細かいメモリ番地)を指定
-		MOV		DL,0x00			; Aドライブ
-		INT		0x13			; ディスク関連のBIOS機能呼び出し
-		JC		error			; JC命令「Jamp if Carry」　INT0x13でエラーがあるとキャリーフラグが1になる。
+		MOV		SI,0			; 失敗回数を数えるレジスタ
 
-		MOV		SI,msg			; ソースインデックスにmsg:ラベルのメモリ番地を入れる
+retry:
+		MOV		AH,0x02			; ディスク読み込み: AH=0x02
+		MOV 	AL,1			; 処理するセクタ: 1セクタ
+		MOV		BX,0			; バッファアドレスのオフセットアドレス(細かいメモリ番地)を指定
+		MOV		DL,0x00			; ドライブ番号: Aドライブ
+		INT		0x13			; ディスク関連のBIOS機能呼び出し
+		JNC		fin				; JNC命令「Jamp if No Carry」でINT0x13でエラーがなければキャリーフラグが0なので、0だったらfinへジャンプする
+
+;エラーだった時のリトライ処理
+		ADD		SI,1			; エラー回数を＋１する
+		CMP		SI,5			; CMP命令「CoMPare」比較命令。SI - 5 を行って、結果をステータスフラグにセットする。
+		JAE		error			; JAE命令「Jamp if Above or Equal」で直前のCMP命令で、SIが5以上ならジャンプ（<=）
+		MOV		AH,0x00			; システムリセットを行うには、AHに0x00をセットする（OS-wikiより）
+		MOV		DL,0x00			; ドライブ番号: Aドライブ。
+		INT		0x13			; システムリセットのためのBIOS機能呼び出し
+		JMP		retry			; 無条件ジャンプ
 
 ; 読み込みが終わって終わり
 
@@ -73,7 +83,7 @@ putloop:
 ; メッセージ部分
 msg:
 		DB		0x0a, 0x0a		; 改行を2つ
-		DB		"hello, I'm kusaOS!"
+		DB		"load error"
 		DB		0x0a			; 改行
 		DB		0
 

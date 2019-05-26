@@ -86,6 +86,7 @@ next:
 		JB		readloop		; CHがCYLS未満ならreadloopへジャンプ
 
 ; 読み込みが終わってkusaOS.sysへジャンプ！
+		MOV		[0x0ff0],CH		; セクタの値を0x0ff0へメモして、どこまで読み込んだか記録する
 		JMP		0xc200			; kusaOS.sysのあるメモリ番地。ディスクイメージで0x4200以降にkusaOS.sysが入るため、0x8000 + 0x4200 = 0xc200から始まるようにした。
 
 ; 以下、エラーメッセージのセクション

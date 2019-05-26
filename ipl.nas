@@ -1,7 +1,9 @@
 ; kusa-os
 ; TAB=4
 
-		ORG		0x7c00			;プログラムの開始点のメモリ番地を指定する。疑似命令でCPUでの処理は何もしない。
+CYLS	EQU		10				; 定数宣言。CYLS=10という意味。Cylindersの略でCYLSとした模様
+
+		ORG		0x7c00			; プログラムの開始点のメモリ番地を指定する。疑似命令でCPUでの処理は何もしない。
 
 ; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
 		JMP		entry			; 無条件でentryラベルへジャンプ
@@ -40,9 +42,11 @@ entry:
 		MOV		DH,0			; ヘッド0
 		MOV		CL,2			; セクタ2 これでブートセクタの次が読み込める
 
+; 1シリンダの表と裏をそれぞれ18セクタ読んで、それをCYLS分繰り返すためのループ
 readloop:
-		MOV		SI,0			; 失敗回数を数えるレジスタ
+		MOV		SI,0			; 失敗回数を数えるレジスタを初期化
 
+;ディスクをBIOS機能で読み込むための値のセットと機能呼び出し
 retry:
 		MOV		AH,0x02			; ディスク読み込み: AH=0x02
 		MOV		AL,1			; 処理するセクタ: 1セクタ
@@ -50,24 +54,36 @@ retry:
 		MOV		DL,0x00			; ドライブ番号: Aドライブ
 		INT		0x13			; ディスク関連のBIOS機能呼び出し
 		JNC		next			; JNC命令「Jamp if No Carry」でINT0x13でエラーがなければキャリーフラグが0なので、0だったらnextへジャンプする
-		;JNC		fin				; JNC命令「Jamp if No Carry」でINT0x13でエラーがなければキャリーフラグが0なので、0だったらfinへジャンプする
 
-;エラーだった時のリトライ処理
+;エラーだった時のリトライ処理。5回エラーだったらエラーメッセージに飛ぶ。
 		ADD		SI,1			; エラー回数を＋１する
 		CMP		SI,5			; CMP命令「CoMPare」比較命令。SI - 5 を行って、結果をステータスフラグにセットする。
-		JAE		error			; JAE命令「Jamp if Above or Equal」で直前のCMP命令で、SIが5以上ならジャンプ（<=）
+		JAE		error			; JAE命令「Jamp if Above or Equal」で直前のCMP命令で、SIが5以上ならジャンプ（>=）
 		MOV		AH,0x00			; システムリセットを行うには、AHに0x00をセットする（OS-wikiより）
 		MOV		DL,0x00			; ドライブ番号: Aドライブ。
 		INT		0x13			; システムリセットのためのBIOS機能呼び出し
 		JMP		retry			; 無条件ジャンプ
 
+; 18セクタ読み込む
 next:
 		MOV		AX,ES			; ESセグメントに読みに行くセグメント(0x0820)が入っていいるので、そこに値を足すため一旦AXに移す
         ADD		AX,0x0020		; 0x0020を足す。実際は × 16されて0x0200(512バイト)が0x8200に足されるので、0x8400になりFDDの1セクタ分メモリ番地が先を示された。
 		MOV		ES,AX			; 足した結果をESセグメントに戻す事で、セグメントを進められる。
 		ADD		CL,1			; 現在のセクタに+１する
 		CMP		CL,18			; セクタが18まで到達するかを CL - 18 を行って確認する。
-		JBE		readloop		; JBE命令「Jamp if Below Equal」で直前のCMP命令でCLが18以下ならジャンプ（>=)
+		JBE		readloop		; JBE命令「Jamp if Below Equal」で直前のCMP命令でCLが18以下ならジャンプ(<=)
+
+;ヘッドの裏側(ヘッド1)を使ってセクタ1~18まで読みにいく。ヘッド0のセクタ18まで読み終わると次は同じシリンダの裏を読みにいく。 
+		MOV		CL,1			; セクタ1 セクタ1に戻す。
+		ADD		DH,1			; ヘッド1 ヘッド0に1加える
+		CMP		DH,2			; CMP命令「CoMPare」比較命令。DH - 2 を行って、結果をステータスフラグにセットする。 
+		JB		readloop		; JB命令「Jamp if Below」で直前のCMP命令でDHが2より小さければジャンプ（<)
+
+;CYLS分だけ読みに行く。
+		MOV		DH,0			; ヘッドを0に戻して表のヘッドに切り替える。
+		ADD		CH,1			; 現在のシリンダ番号に1加える。
+		CMP		CH,CYLS			; シリンダがシリンダ定数に達しているか比較
+		JB		readloop		; CHがCYLS未満ならreadloopへジャンプ
 
 ; 読み込みが終わって終わり
 fin:

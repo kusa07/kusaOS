@@ -2,12 +2,12 @@
 ; TAB=4
 
 ; BOOT_INFO関係の定数宣言 BOOT_INFOは起動時の情報という意味で名付けたらしい。
-CYLS    EQU     0x0ff0          ; 
-LEDS    EQU     0x0ff1
-VMODE   EQU     0x0ff2
-SCRNX   EQU     0x0ff4
-SCRNY   EQU     0x0ff6
-VRAM    EQU     0x0ff8
+CYLS    EQU     0x0ff0          ; シリンダの値を記録するメモリ番地の定数
+LEDS    EQU     0x0ff1          ; キーボードのLED状態の値を記録するメモリ番地の定数
+VMODE   EQU     0x0ff2          ; 画面モードの値を記録するメモリ番地の定数
+SCRNX   EQU     0x0ff4          ; スクリーンのX軸の値を記録するメモリ番地の定数
+SCRNY   EQU     0x0ff6          ; スクリーンのY軸の値を記録するメモリ番地の定数
+VRAM    EQU     0x0ff8          ; VRAMのアドレスを記録するメモリ番地の定数
 
         ORG     0xc200          ; このプログラムが読み込まれるメモリ番地。ディスクイメージで0x4200以降にkusaOS.sysが入るため、0x8000 + 0x4200 = 0xc200から始まるようにした。
 

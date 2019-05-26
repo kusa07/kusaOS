@@ -17,9 +17,14 @@ default:
 ipl.bin:	ipl.nas Makefile
 			$(NASK) ipl.nas ipl.bin ipl.lst
 
-kusaOS.img:	ipl.bin	Makefile
+kusaOS.sys:	kusaOS.nas Makefile
+			$(NASK) kusaOS.nas kusaOS.sys kusaOS.lst
+
+kusaOS.img:	ipl.bin	kusaOS.sys Makefile
 			$(EDIMG) imgin:../z_tools/fdimg0at.tek \
-				wbinimg src:ipl.bin len:512 from:0 to:0 imgout:kusaOS.img
+				wbinimg src:ipl.bin len:512 from:0 to:0 \
+				copy from:kusaOS.sys to:@: \
+				imgout:kusaOS.img
 
 #コマンド
 
@@ -41,6 +46,9 @@ install:
 clean:
 			$(DEL) ipl.bin
 			$(DEL) ipl.lst
+			$(DEL) kusaOS.sys
+			$(DEL) kusaOS.lst
+
 
 src_only:
 			$(MAKE) clean

@@ -42,10 +42,13 @@ bootpack.nas :	bootpack.gas Makefile
 bootpack.obj :	bootpack.nas Makefile
 				$(NASK) bootpack.nas bootpack.obj bootpack.lst
 
+naskfunc.obj :	naskfunc.nas Makefile
+				$(NASK) naskfunc.nas naskfunc.obj naskfunc.lst
+
 # 必要なオブジェクトファイルを全てくっつけてbimファイル(binary image 著者オリジナル2進数イメージファイル)　3MB(3MB*1024=3072K)+64KB=3136KB
-bootpack.bim :	bootpack.obj Makefile
+bootpack.bim :	bootpack.obj naskfunc.obj Makefile
 				$(OBJ2BIM) @$(RULEFILE) out:bootpack.bim stack:3136k map:bootpack.map \
-					bootpack.obj
+					bootpack.obj naskfunc.obj
 
 bootpack.hrb :	bootpack.bim Makefile
 				$(BIM2HRB) bootpack.bim bootpack.hrb 0

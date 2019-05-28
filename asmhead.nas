@@ -5,34 +5,34 @@ BOTPAK  EQU     0x00280000      ;
 DSKCAC  EQU     0x00100000
 DSKCAC0 EQU     0x00008000
 
-; BOOT_INFO関係の定数宣言 BOOT_INFOは起動時の情報という意味で名付けたらしい。
-CYLS    EQU     0x0ff0          ; シリンダの値を記録するメモリ番地の定数
-LEDS    EQU     0x0ff1          ; キーボードのLED状態の値を記録するメモリ番地の定数
-VMODE   EQU     0x0ff2          ; 画面モードの値を記録するメモリ番地の定数
-SCRNX   EQU     0x0ff4          ; スクリーンのX軸の値を記録するメモリ番地の定数
-SCRNY   EQU     0x0ff6          ; スクリーンのY軸の値を記録するメモリ番地の定数
-VRAM    EQU     0x0ff8          ; VRAMのアドレスを記録するメモリ番地の定数
+; BOOT_INFO�֌W�̒萔�錾 BOOT_INFO�͋N�����̏��Ƃ����Ӗ��Ŗ��t�����炵���B
+CYLS    EQU     0x0ff0          ; �V�����_�̒l���L�^���郁�����Ԓn�̒萔
+LEDS    EQU     0x0ff1          ; �L�[�{�[�h��LED��Ԃ̒l���L�^���郁�����Ԓn�̒萔
+VMODE   EQU     0x0ff2          ; ��ʃ��[�h�̒l���L�^���郁�����Ԓn�̒萔
+SCRNX   EQU     0x0ff4          ; �X�N���[����X���̒l���L�^���郁�����Ԓn�̒萔
+SCRNY   EQU     0x0ff6          ; �X�N���[����Y���̒l���L�^���郁�����Ԓn�̒萔
+VRAM    EQU     0x0ff8          ; VRAM�̃A�h���X���L�^���郁�����Ԓn�̒萔
 
-        ORG     0xc200          ; このプログラムが読み込まれるメモリ番地。ディスクイメージで0x4200以降にkusaOS.sysが入るため、0x8000 + 0x4200 = 0xc200から始まるようにした。
+        ORG     0xc200          ; ���̃v���O�������ǂݍ��܂�郁�����Ԓn�B�f�B�X�N�C���[�W��0x4200�ȍ~��kusaOS.sys�����邽�߁A0x8000 + 0x4200 = 0xc200����n�܂�悤�ɂ����B
 
-; 画面モード設定
-        MOV     AL,0x13         ; VGAグラフィックス、320x200x8bitカラー、パックドピクセル 
-        MOV     AH,0x00         ; os-wikiによるとこの値でいいらしい
-        INT     0x10            ; ビデオ関連のBIOS機能を呼び出し
+; ��ʃ��[�h�ݒ�
+        MOV     AL,0x13         ; VGA�O���t�B�b�N�X�A320x200x8bit�J���[�A�p�b�N�h�s�N�Z�� 
+        MOV     AH,0x00         ; os-wiki�ɂ��Ƃ��̒l�ł����炵��
+        INT     0x10            ; �r�f�I�֘A��BIOS�@�\���Ăяo��
 
-; 画面モードの情報をメモリにメモする(C言語が参照する)
+; ��ʃ��[�h�̏����������Ƀ�������(C���ꂪ�Q�Ƃ���)
         MOV     BYTE [VMODE],8  
         MOV     WORD [SCRNX],320
         MOV     WORD [SCRNY],200
-        MOV     DWORD [VRAM],0x000a0000 ; 320 × 200の画面モードのVRAMのメモリ番地
+        MOV     DWORD [VRAM],0x000a0000 ; 320 �~ 200�̉�ʃ��[�h��VRAM�̃������Ԓn
 
-; キーボードのLED状態をBIOSに教えてもらう
+; �L�[�{�[�h��LED��Ԃ�BIOS�ɋ����Ă��炤
 
-        MOV     AH,0x02         ; キーボード関係のBIOS機能呼び出しの「キーロック＆シフト状態取得」で動作させるために、0x02をAHにセット。
-        INT     0x16            ; キーボード関係のBIOS機能呼び出し。
-        MOV     [LEDS],AL       ; BIOS機能を呼び出した結果の状態コードをLEDSのアドレスに記録（BOOT_INFO)
+        MOV     AH,0x02         ; �L�[�{�[�h�֌W��BIOS�@�\�Ăяo���́u�L�[���b�N���V�t�g��Ԏ擾�v�œ��삳���邽�߂ɁA0x02��AH�ɃZ�b�g�B
+        INT     0x16            ; �L�[�{�[�h�֌W��BIOS�@�\�Ăяo���B
+        MOV     [LEDS],AL       ; BIOS�@�\���Ăяo�������ʂ̏�ԃR�[�h��LEDS�̃A�h���X�ɋL�^�iBOOT_INFO)
 
-;PICが割り込みを受け付けないようにする
+;PIC�����荞�݂��󂯕t���Ȃ��悤�ɂ���
 
         MOV     AL,0xff
         OUT     0x21,AL
@@ -41,7 +41,7 @@ VRAM    EQU     0x0ff8          ; VRAMのアドレスを記録するメモリ番
 
         CLI
 
-; CPUから1MB以上のメモリにアクセスできるように、A20GATEを設定
+; CPU����1MB�ȏ�̃������ɃA�N�Z�X�ł���悤�ɁAA20GATE��ݒ�
 
         CALL    waitkbdout
         MOV     AL,0xd1
@@ -51,7 +51,7 @@ VRAM    EQU     0x0ff8          ; VRAMのアドレスを記録するメモリ番
         OUT     0x60,AL
         CALL    waitkbdout
 
-; プロテクトモード移行
+; �v���e�N�g���[�h�ڍs
 
 [INSTRSET "i486p"]
 
@@ -70,23 +70,23 @@ pipelineflush:
         MOV     GS,AX
         MOV     SS,AX
 
-; bootpackの転送
+; bootpack�̓]��
 
         MOV     ESI,bootpack
         MOV     EDI,BOTPAK
         MOV     ECX,512*1024/4
         CALL    memcpy
 
-; ついでにディスクデータも本来の位置へ転送
+; ���łɃf�B�X�N�f�[�^���{���̈ʒu�֓]��
 
-;ブートセクタから
+;�u�[�g�Z�N�^����
 
         MOV     ESI,0x7c00
         MOV     EDI,DSKCAC
         MOV     ECX,512/4
         CALL    memcpy
 
-; 残り全部
+; �c��S��
 
         MOV     ESI,DSKCAC0+512
         MOV     EDI,DSKCAC+512
@@ -96,13 +96,13 @@ pipelineflush:
         SUB     ECX,512/4
         CALL    memcpy
 
-; asmheadでしなければいけない事はすべて終了、あとはbootpackに任せる
+; asmhead�ł��Ȃ���΂����Ȃ����͂��ׂďI���A���Ƃ�bootpack�ɔC����
 
-; bootpackの起動
+; bootpack�̋N��
 
         MOV     EBX,BOTPAK
         MOV     ECX,[EBX+16]
-        ADD     EXC,3
+        ADD     ECX,3
         SHR     ECX,2
         JZ      skip
         MOV     ESI,[EBX+20]

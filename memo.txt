@@ -3,7 +3,23 @@ FDD
     ヘッダ0
         セクタ１    ブートセクタ    最初の512バイト
 
-
+OSイメージファイルの中身
+    # 大雑把に下記のイメージ
+    OS.img = ipl10.nas + OS.sys
+    OS.sys = asmhead.nas + bootpack.hrb
+    bootpack.hrb = naskfunc.nas + bootpack.c
+    
+    # OS.imgのバイナリファイルの中身の配置
+    0x0000-0000     ipl10.nasが入る
+    0x0000-01ff     「55 AA」ブートセクタ最後の2byte。これをもってフロッピーだと認識する。
+    0x0000-0200     「F0 FF　FF　FF　0F」なんだろこれ？
+    0x0000-1400     「F0 FF　FF　FF　0F」なんだろこれ？
+    0x0000-2600     OS.sysのファイル名が書かれる
+    0x0000-4200     OS.sysの中でasmhead.nasが始まる
+    0x0000-432f
+    0x0000-4330     bootpack.hrb
+    0x0000-438f
+    0x0000-4390     以降00
 
 メモリ
     0x0000-0ff0     シリンダの値を記録

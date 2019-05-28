@@ -1,15 +1,21 @@
-/* ä»–ã®ãƒ•ã‚¡ã‚¤ãƒ«ã§ä½œã£ãŸé–¢æ•°ãŒã‚ã‚‹äº‹ã‚’Cã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ã«æ•™ãˆã‚‹ */
-
+/* ‘¼‚Ìƒtƒ@ƒCƒ‹‚Åì‚Á‚½ŠÖ”‚ª‚ ‚é–‚ğCƒRƒ“ƒpƒCƒ‰‚É‹³‚¦‚é(ŠÖ”éŒ¾) */
+/* ŠÖ”éŒ¾‚µ‚Ä‚¢‚é‚Ì‚ÅAnaskfunc.nas‚ÌŠÖ”‚ªÀs‚Å‚«‚é */
 
 void io_hlt(void);
+void write_mem8(int addr, int data);
 
 
-void HariMain(void){
+void HariMain(void)
+{
 
-fin:
+    int i;
 
-    io_hlt();   /* é–¢æ•°å®£è¨€ã—ã¦ã„ã‚‹ã®ã§ã€naskfunc.nasã®é–¢æ•°ãŒå®Ÿè¡Œã§ãã‚‹ */
-
-    goto fin;
-
+    for (i = 0xa0000; i <= 0xaffff; i++) {
+        write_mem8(i, 15); /* ƒƒ‚ƒŠ‚É’¼Úƒf[ƒ^‚ğ‘‚«‚Ş */
+    }
+    
+    /* ˆ—‚ªI‚í‚Á‚½‚ç–³ŒÀHLT */
+    for (;;) {
+        io_hlt();   
+    }
 }

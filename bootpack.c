@@ -3,19 +3,16 @@
 
 void io_hlt(void);
 
-
 void HariMain(void)
 {
-
     int i;
-    char *p;    /* BYTE[...]用の番地 */
-    //char * i;
+    char *p;    /* BYTE[...]用の番地 ポインタ変数事態は4バイト */
 
-    for (i = 0xa0000; i <= 0xaffff; i++) {
-        p = (char *) i;  /* 番地を代入 */
-        *p = i & 0x0f;  /* write_mem8(i, i & 0x0f);の代わりになる */
-        //*((char * ) i) = i & 0x0f;
-        //*i = (int) i & 0x0f;    /* 本とは違う実装方法を考えた */
+    /* pに値として0x0000が入った。 */
+    p = (char *) 0xa0000;   /* 値を文字型ポインタにキャスト変換して、ポインタ変数に代入 */
+
+    for (i = 0; i <= 0xffff; i++) {
+        *(p + i) = i & 0x0f;
     }
     
     /* 処理が終わったら無限HLT */

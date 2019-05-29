@@ -11,7 +11,7 @@ void HariMain(void)
     int i;
 
     for (i = 0xa0000; i <= 0xaffff; i++) {
-        write_mem8(i, 15); /* メモリに直接データを書き込む */
+        write_mem8(i, i & 0x0f); /* メモリに直接データを書き込む */
     }
     
     /* 処理が終わったら無限HLT */

@@ -64,12 +64,23 @@ kusaOS.img :	ipl10.bin	kusaOS.sys Makefile
 
 # コマンド
 
-asm :
+# 各ファイル生成コマンド
+ipl10 :
 				$(MAKE) ipl10.bin
+
+asmhead :
+				$(MAKE) asmhead.bin
+
+bootpack :
+				$(MAKE) bootpack.obj
+
+naskfunc :
+				$(MAKE) naskfunc.obj
 
 img :
 				$(MAKE) kusaOS.img
 
+# イメージ起動コマンド
 run :		
 				$(MAKE) img
 				$(COPY) kusaOS.img ..\z_tools\qemu\fdimage0.bin
@@ -79,6 +90,7 @@ install :
 				$(MAKE) img
 				$(IMGTOL) w a: kusaOS.img
 
+# 不要ファイル削除コマンド
 clean :
 				$(DEL)  *.bin
 				$(DEL)  *.lst

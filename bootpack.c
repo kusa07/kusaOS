@@ -12,6 +12,7 @@ void io_store_eflags(int eflags);
 void init_palette(void);
 void set_palette(int start, int end, unsigned char *rgb);
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
+void init_screen(char *vram, int x, int y);
 
 /* パレットカラーの定数宣言 */
 #define COL8_000000     0   /* 0:黒 */
@@ -35,32 +36,20 @@ void HariMain(void)
 {
     char *vram;
     int xsize, ysize;
+    short *binfo_scrnx, *binfo_scrny;  /* binfoはboot info の略 */
+    int *binfo_vram;
 
     init_palette(); /* パレットを設定 */
-    vram = (char *) 0xa0000;    /* ビデオアクセス用のメモリ番地 */
-    xsize = 320;                /* X軸の大きさ */
-    ysize = 200;                /* Y軸の大きさ */
 
-    /* デスクトップを描画 */
-    /* 引数は、（ビデオアクセス用メモリ番地、画面のX軸の大きさ、色、X軸の開始位置、Y軸の開始位置、X軸の終了位置、Y軸の終了位置） */
-    boxfill8(vram, xsize, COL8_000084,          0,            0, xsize - 1, ysize - 29);    /* 背景 */
+    binfo_scrnx = (short *) 0x0ff4;     /* asmhead.nasのSCRNXのメモリ番地 */
+    binfo_scrny = (short *) 0x0ff6;     /* asmhead.nasのSCRNYのメモリ番地 */
+    binfo_vram = (int *) 0x0ff8;        /* asmhead.nasのVRAMのメモリ番地 */
 
-    boxfill8(vram, xsize, COL8_008484,          0,   ysize - 28, xsize - 1, ysize - 28);    /* タスクバー 上部横線 その１ */
-    boxfill8(vram, xsize, COL8_848400,          0,   ysize - 27, xsize - 1, ysize - 27);    /* タスクバー 上部横線 その２ */
-    boxfill8(vram, xsize, COL8_000000,          0,   ysize - 26, xsize - 1, ysize -  1);    /* タスクバー */
+    xsize = *binfo_scrnx;
+    ysize = *binfo_scrny;
+    vram = (char *) *binfo_vram;
 
-    boxfill8(vram, xsize, COL8_C6C6C6,          3,   ysize - 24,         59, ysize - 24);   /* OSボタン 上部横線　その１ */
-    boxfill8(vram, xsize, COL8_C6C6C6,          2,   ysize - 24,          2, ysize -  4);   /* OSボタン 左縦線 */
-    boxfill8(vram, xsize, COL8_848484,          3,   ysize -  4,         59, ysize -  4);   /* OSボタン 下部横線 */
-    boxfill8(vram, xsize, COL8_848484,         59,   ysize - 23,         59, ysize -  5);   /* OSボタン 右縦線 */
-    boxfill8(vram, xsize, COL8_000000,          2,   ysize -  3,         59, ysize -  3);   /* ? */
-    boxfill8(vram, xsize, COL8_000000,         60,   ysize - 24,         60, ysize -  3);   /* ? */
-    
-    boxfill8(vram, xsize, COL8_848484, xsize - 47,   ysize - 24, xsize -  4, ysize - 24);   /* タスクバー右のくぼみ 上部横線 */
-    boxfill8(vram, xsize, COL8_848484, xsize - 47,   ysize - 23, xsize - 47, ysize -  4);   /* タスクバーの右のくぼみ 左縦線 */
-    boxfill8(vram, xsize, COL8_FFFFFF, xsize - 47,   ysize -  3, xsize -  4, ysize -  3);   /* タスクバーの右のくぼみ 下横線 */
-    boxfill8(vram, xsize, COL8_848484, xsize -  3,   ysize - 24, xsize -  3, ysize -  3);   /* タスクバーの右のくぼみ 右縦線 */
-
+    init_screen(vram, xsize, ysize);    /* デスクトップの描画 */
 
     /* 処理が終わったら無限HLT */
     for (;;) {
@@ -134,5 +123,31 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
             vram[y * xsize + x] = c;    
         }
     }
+    return;
+}
+
+/* デスクトップを描画 */
+void init_screen(char *vram, int x, int y )
+{
+    /* boxfill8の引数は、（ビデオアクセス用メモリ番地、画面のX軸の大きさ、色、X軸の開始位置、Y軸の開始位置、X軸の終了位置、Y軸の終了位置） */
+    boxfill8(vram, x, COL8_000084,      0,        0, x -  1, y - 29);    /* 背景 */
+
+    boxfill8(vram, x, COL8_008484,      0,   y - 28, x -  1, y - 28);    /* タスクバー 上部横線 その１ */
+    boxfill8(vram, x, COL8_848400,      0,   y - 27, x -  1, y - 27);    /* タスクバー 上部横線 その２ */
+    boxfill8(vram, x, COL8_000000,      0,   y - 26, x -  1, y -  1);    /* タスクバー */
+
+    boxfill8(vram, x, COL8_C6C6C6,      3,   y - 24,     59, y - 24);   /* OSボタン 上部横線　その１ */
+    boxfill8(vram, x, COL8_C6C6C6,      2,   y - 24,      2, y -  4);   /* OSボタン 左縦線 */
+    boxfill8(vram, x, COL8_848484,      3,   y -  4,     59, y -  4);   /* OSボタン 下部横線 */
+    boxfill8(vram, x, COL8_848484,     59,   y - 23,     59, y -  5);   /* OSボタン 右縦線 */
+
+    boxfill8(vram, x, COL8_000000,      2,   y -  3,     59, y -  3);   /* ? */
+    boxfill8(vram, x, COL8_000000,     60,   y - 24,     60, y -  3);   /* ? */
+
+    boxfill8(vram, x, COL8_848484, x - 47,   y - 24, x -  4, y - 24);   /* タスクバー右のくぼみ 上部横線 */
+    boxfill8(vram, x, COL8_848484, x - 47,   y - 23, x - 47, y -  4);   /* タスクバーの右のくぼみ 左縦線 */
+    boxfill8(vram, x, COL8_FFFFFF, x - 47,   y -  3, x -  4, y -  3);   /* タスクバーの右のくぼみ 下横線 */
+    boxfill8(vram, x, COL8_848484, x -  3,   y - 24, x -  3, y -  3);   /* タスクバーの右のくぼみ 右縦線 */
+
     return;
 }

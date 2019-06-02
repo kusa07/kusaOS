@@ -43,14 +43,14 @@ void HariMain(void)
 
     /* デスクトップを描画 */
     /* 引数は、（ビデオアクセス用メモリ番地、画面のX軸の大きさ、色、X軸の開始位置、Y軸の開始位置、X軸の終了位置、Y軸の終了位置） */
-    boxfill8(vram, xsize, COL8_008484,          0,            0, xsize - 1, ysize - 29);    /* 背景 */
+    boxfill8(vram, xsize, COL8_000084,          0,            0, xsize - 1, ysize - 29);    /* 背景 */
 
-    boxfill8(vram, xsize, COL8_C6C6C6,          0,   ysize - 28, xsize - 1, ysize - 28);    /* タスクバー 上部横線 その１ */
-    boxfill8(vram, xsize, COL8_FFFFFF,          0,   ysize - 27, xsize - 1, ysize - 27);    /* タスクバー 上部横線 その２ */
-    boxfill8(vram, xsize, COL8_C6C6C6,          0,   ysize - 26, xsize - 1, ysize -  1);    /* タスクバー */
+    boxfill8(vram, xsize, COL8_008484,          0,   ysize - 28, xsize - 1, ysize - 28);    /* タスクバー 上部横線 その１ */
+    boxfill8(vram, xsize, COL8_848400,          0,   ysize - 27, xsize - 1, ysize - 27);    /* タスクバー 上部横線 その２ */
+    boxfill8(vram, xsize, COL8_000000,          0,   ysize - 26, xsize - 1, ysize -  1);    /* タスクバー */
 
-    boxfill8(vram, xsize, COL8_FFFFFF,          3,   ysize - 24,         59, ysize - 24);   /* OSボタン 上部横線　その１ */
-    boxfill8(vram, xsize, COL8_FFFFFF,          2,   ysize - 24,          2, ysize -  4);   /* OSボタン 左縦線 */
+    boxfill8(vram, xsize, COL8_C6C6C6,          3,   ysize - 24,         59, ysize - 24);   /* OSボタン 上部横線　その１ */
+    boxfill8(vram, xsize, COL8_C6C6C6,          2,   ysize - 24,          2, ysize -  4);   /* OSボタン 左縦線 */
     boxfill8(vram, xsize, COL8_848484,          3,   ysize -  4,         59, ysize -  4);   /* OSボタン 下部横線 */
     boxfill8(vram, xsize, COL8_848484,         59,   ysize - 23,         59, ysize -  5);   /* OSボタン 右縦線 */
     boxfill8(vram, xsize, COL8_000000,          2,   ysize -  3,         59, ysize -  3);   /* ? */

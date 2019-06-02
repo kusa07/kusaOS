@@ -32,7 +32,7 @@ VRAM    EQU     0x0ff8          ; VRAMのアドレスを記録するメモリ番
         INT     0x16            ; キーボード関係のBIOS機能呼び出し。
         MOV     [LEDS],AL       ; BIOS機能を呼び出した結果の状態コードをLEDSのアドレスに記録（BOOT_INFO)
 
-;PICが割り込みを受け付けないようにする
+; PICが割り込みを受け付けないようにする
 
         MOV     AL,0xff
         OUT     0x21,AL

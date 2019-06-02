@@ -33,20 +33,35 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 
 void HariMain(void)
 {
-    int i;
-    char *p;    /* BYTE[...]用の番地 ポインタ変数事態は4バイト */
+    char *vram;
+    int xsize, ysize;
 
     init_palette(); /* パレットを設定 */
+    vram = (char *) 0xa0000;    /* ビデオアクセス用のメモリ番地 */
+    xsize = 320;                /* X軸の大きさ */
+    ysize = 200;                /* Y軸の大きさ */
 
-    p = (char *) 0xa0000;   /* 値を文字型ポインタにキャスト変換して、ポインタ変数に代入 */
-
-    /* 四角を三つ書く */
+    /* デスクトップを描画 */
     /* 引数は、（ビデオアクセス用メモリ番地、画面のX軸の大きさ、色、X軸の開始位置、Y軸の開始位置、X軸の終了位置、Y軸の終了位置） */
-    boxfill8(p, 320, COL8_FF0000, 20, 20, 120, 120);
-    boxfill8(p, 320, COL8_00FF00, 70, 50, 170, 150);
-    boxfill8(p, 320, COL8_0000FF, 120, 80, 220, 180);
+    boxfill8(vram, xsize, COL8_008484,          0,            0, xsize - 1, ysize - 29);    /* 背景 */
 
+    boxfill8(vram, xsize, COL8_C6C6C6,          0,   ysize - 28, xsize - 1, ysize - 28);    /* タスクバー 上部横線 その１ */
+    boxfill8(vram, xsize, COL8_FFFFFF,          0,   ysize - 27, xsize - 1, ysize - 27);    /* タスクバー 上部横線 その２ */
+    boxfill8(vram, xsize, COL8_C6C6C6,          0,   ysize - 26, xsize - 1, ysize -  1);    /* タスクバー */
+
+    boxfill8(vram, xsize, COL8_FFFFFF,          3,   ysize - 24,         59, ysize - 24);   /* OSボタン 上部横線　その１ */
+    boxfill8(vram, xsize, COL8_FFFFFF,          2,   ysize - 24,          2, ysize -  4);   /* OSボタン 左縦線 */
+    boxfill8(vram, xsize, COL8_848484,          3,   ysize -  4,         59, ysize -  4);   /* OSボタン 下部横線 */
+    boxfill8(vram, xsize, COL8_848484,         59,   ysize - 23,         59, ysize -  5);   /* OSボタン 右縦線 */
+    boxfill8(vram, xsize, COL8_000000,          2,   ysize -  3,         59, ysize -  3);   /* ? */
+    boxfill8(vram, xsize, COL8_000000,         60,   ysize - 24,         60, ysize -  3);   /* ? */
     
+    boxfill8(vram, xsize, COL8_848484, xsize - 47,   ysize - 24, xsize -  4, ysize - 24);   /* タスクバー右のくぼみ 上部横線 */
+    boxfill8(vram, xsize, COL8_848484, xsize - 47,   ysize - 23, xsize - 47, ysize -  4);   /* タスクバーの右のくぼみ 左縦線 */
+    boxfill8(vram, xsize, COL8_FFFFFF, xsize - 47,   ysize -  3, xsize -  4, ysize -  3);   /* タスクバーの右のくぼみ 下横線 */
+    boxfill8(vram, xsize, COL8_848484, xsize -  3,   ysize - 24, xsize -  3, ysize -  3);   /* タスクバーの右のくぼみ 右縦線 */
+
+
     /* 処理が終わったら無限HLT */
     for (;;) {
         io_hlt();   

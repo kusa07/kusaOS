@@ -32,22 +32,26 @@ void init_screen(char *vram, int x, int y);
 #define COL8_008484     14  /* 14:暗い水色 */
 #define COL8_848484     15  /* 15:暗い灰色 */
 
+/* 構造体でBOOT情報をまとめる */
+struct BOOTINFO {
+    char cyls, leds, vmode, reserve;
+    short scrnx, scrny;
+    char *vram;
+};
+
+
 void HariMain(void)
 {
     char *vram;
     int xsize, ysize;
-    short *binfo_scrnx, *binfo_scrny;  /* binfoはboot info の略 */
-    int *binfo_vram;
+    struct BOOTINFO *binfo;
 
     init_palette(); /* パレットを設定 */
 
-    binfo_scrnx = (short *) 0x0ff4;     /* asmhead.nasのSCRNXのメモリ番地 */
-    binfo_scrny = (short *) 0x0ff6;     /* asmhead.nasのSCRNYのメモリ番地 */
-    binfo_vram = (int *) 0x0ff8;        /* asmhead.nasのVRAMのメモリ番地 */
-
-    xsize = *binfo_scrnx;
-    ysize = *binfo_scrny;
-    vram = (char *) *binfo_vram;
+    binfo = (struct BOOTINFO *) 0x0ff0;
+    xsize = (*binfo).scrnx;
+    ysize = (*binfo).scrny;
+    vram = (*binfo).vram;
 
     init_screen(vram, xsize, ysize);    /* デスクトップの描画 */
 

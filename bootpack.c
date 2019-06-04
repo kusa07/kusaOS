@@ -42,18 +42,26 @@ struct BOOTINFO {
 
 void HariMain(void)
 {
-    char *vram;
-    int xsize, ysize;
+    //char *vram;
+    //int xsize, ysize;
     struct BOOTINFO *binfo;
 
     init_palette(); /* パレットを設定 */
 
-    binfo = (struct BOOTINFO *) 0x0ff0;
-    xsize = (*binfo).scrnx;
-    ysize = (*binfo).scrny;
-    vram = (*binfo).vram;
+    /* asmhead.nasで宣言したメモリ番地（BOOTINFO）の先頭番地を読み込んで、
+       後に続くメモリ番地の配置は構造体BOOTINFOと同じ間隔（構造体で宣言した型分のバイトが予約されるため）なので、
+       そのまま指し示されて使える。*/
+    binfo = (struct BOOTINFO *) 0x0ff0;     /* asmhead.nasと同じ先頭のメモリ番地を指定している。これは同時にcylsのメモリ番地を示している事にもなる。 */
 
-    init_screen(vram, xsize, ysize);    /* デスクトップの描画 */
+    /* 変数に代入してinit_screen()に渡している例 */
+    //xsize = binfo->scrnx;
+    //ysize = binfo->scrny;
+    //vram = binfo->vram;
+
+    //init_screen(vram, xsize, ysize);    /* デスクトップの描画 */
+
+    /* 直接引数に構造体のメンバを示すための矢印記法を使っている */
+    init_screen(binfo->vram, binfo->scrnx, binfo->scrny);    /* デスクトップの描画 */
 
     /* 処理が終わったら無限HLT */
     for (;;) {

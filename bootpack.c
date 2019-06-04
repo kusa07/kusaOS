@@ -13,6 +13,7 @@ void init_palette(void);
 void set_palette(int start, int end, unsigned char *rgb);
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
 void init_screen(char *vram, int x, int y);
+void putfont8(char *vram, int xsize, int x, int y, char c, char *font);
 
 /* パレットカラーの定数宣言 */
 #define COL8_000000     0   /* 0:黒 */
@@ -42,26 +43,22 @@ struct BOOTINFO {
 
 void HariMain(void)
 {
-    //char *vram;
-    //int xsize, ysize;
-    struct BOOTINFO *binfo;
+    struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;     /* asmhead.nasと同じ先頭のメモリ番地を指定している。これは同時にcylsのメモリ番地を示している事にもなる。 */
+    /* Aを表示するためのフォントの配列 */
+    static char font_A[16] = {
+        0x00, 0x18, 0x18, 0x18, 0x18, 0x24, 0x24, 0x24,
+        0x24, 0x7e, 0x42, 0x42, 0x42, 0xe7, 0x00, 0x00
+    };
 
     init_palette(); /* パレットを設定 */
 
     /* asmhead.nasで宣言したメモリ番地（BOOTINFO）の先頭番地を読み込んで、
        後に続くメモリ番地の配置は構造体BOOTINFOと同じ間隔（構造体で宣言した型分のバイトが予約されるため）なので、
        そのまま指し示されて使える。*/
-    binfo = (struct BOOTINFO *) 0x0ff0;     /* asmhead.nasと同じ先頭のメモリ番地を指定している。これは同時にcylsのメモリ番地を示している事にもなる。 */
-
-    /* 変数に代入してinit_screen()に渡している例 */
-    //xsize = binfo->scrnx;
-    //ysize = binfo->scrny;
-    //vram = binfo->vram;
-
-    //init_screen(vram, xsize, ysize);    /* デスクトップの描画 */
 
     /* 直接引数に構造体のメンバを示すための矢印記法を使っている */
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);    /* デスクトップの描画 */
+    putfont8(binfo->vram, binfo->scrnx, 10, 10, COL8_FFFFFF, font_A);
 
     /* 処理が終わったら無限HLT */
     for (;;) {
@@ -123,7 +120,15 @@ void set_palette(int start, int end, unsigned char *rgb)
 }
 
 /* 四角を描くための関数 */
-/* 引数は、（ビデオアクセス用メモリ番地、画面のX軸の大きさ、色、X軸の開始位置、Y軸の開始位置、X軸の終了位置、Y軸の終了位置） */
+/* 引数は、
+    vram = ビデオアクセス用メモリ番地
+    xsize = 画面のX軸の大きさ
+    c = 色
+    x0 = X軸の開始位置
+    y0 = Y軸の開始位置
+    x1 = X軸の終了位置
+    y1 = Y軸の終了位置
+*/
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1)
 {
     int x, y;
@@ -161,5 +166,45 @@ void init_screen(char *vram, int x, int y )
     boxfill8(vram, x, COL8_FFFFFF, x - 47,   y -  3, x -  4, y -  3);   /* タスクバーの右のくぼみ 下横線 */
     boxfill8(vram, x, COL8_848484, x -  3,   y - 24, x -  3, y -  3);   /* タスクバーの右のくぼみ 右縦線 */
 
+    return;
+}
+
+/* フォントを描画するための関数　*/
+/* 引数は、
+   vram = vramのメモリ番地
+   xsize = 画面のX軸のサイズ
+   x = フォントのX軸の表示位置
+   y = フォントのY軸の表示位置
+   c = 色
+   font = フォントの情報
+*/
+void putfont8(char *vram, int xsize, int x, int y, char c, char *font)
+{
+    int i;
+    char d;     /* data */
+    char *p;
+    for (i = 0; i < 16; i++) {
+        p = vram + (y + i) * xsize + x;
+        d = font[i];
+        /*
+        if ((d & 0x80) != 0) { vram[(y + i) * xsize + x + 0] = c; }
+        if ((d & 0x40) != 0) { vram[(y + i) * xsize + x + 1] = c; }
+        if ((d & 0x20) != 0) { vram[(y + i) * xsize + x + 2] = c; }
+        if ((d & 0x10) != 0) { vram[(y + i) * xsize + x + 3] = c; }
+        if ((d & 0x08) != 0) { vram[(y + i) * xsize + x + 4] = c; }
+        if ((d & 0x04) != 0) { vram[(y + i) * xsize + x + 5] = c; }
+        if ((d & 0x02) != 0) { vram[(y + i) * xsize + x + 6] = c; }
+        if ((d & 0x01) != 0) { vram[(y + i) * xsize + x + 7] = c; }
+        */
+
+        if ((d & 0x80) != 0) { p[0] = c; }
+        if ((d & 0x40) != 0) { p[1] = c; }
+        if ((d & 0x20) != 0) { p[2] = c; }
+        if ((d & 0x10) != 0) { p[3] = c; }
+        if ((d & 0x08) != 0) { p[4] = c; }
+        if ((d & 0x04) != 0) { p[5] = c; }
+        if ((d & 0x02) != 0) { p[6] = c; }
+        if ((d & 0x01) != 0) { p[7] = c; }
+    }
     return;
 }

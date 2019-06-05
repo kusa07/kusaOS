@@ -44,11 +44,7 @@ struct BOOTINFO {
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;     /* asmhead.nasと同じ先頭のメモリ番地を指定している。これは同時にcylsのメモリ番地を示している事にもなる。 */
-    /* Aを表示するためのフォントの配列 */
-    static char font_A[16] = {
-        0x00, 0x18, 0x18, 0x18, 0x18, 0x24, 0x24, 0x24,
-        0x24, 0x7e, 0x42, 0x42, 0x42, 0xe7, 0x00, 0x00
-    };
+    extern char hankaku[4096];
 
     init_palette(); /* パレットを設定 */
 
@@ -58,7 +54,15 @@ void HariMain(void)
 
     /* 直接引数に構造体のメンバを示すための矢印記法を使っている */
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);    /* デスクトップの描画 */
-    putfont8(binfo->vram, binfo->scrnx, 10, 10, COL8_FFFFFF, font_A);
+
+    /* 文字表示　ABC 123 */
+    //putfont8(binfo->vram, binfo->scrnx,  8, 8, COL8_FFFFFF, hankaku + 0x41 * 16);     /* C言語では'A'は0x41に自動的に変更されるので、逆に0x41を指定しても'A'フォントが表示される */
+    putfont8(binfo->vram, binfo->scrnx,  8, 8, COL8_FFFFFF, hankaku + 'A' * 16);
+    putfont8(binfo->vram, binfo->scrnx, 16, 8, COL8_FFFFFF, hankaku + 'B' * 16);
+    putfont8(binfo->vram, binfo->scrnx, 24, 8, COL8_FFFFFF, hankaku + 'C' * 16);
+    putfont8(binfo->vram, binfo->scrnx, 40, 8, COL8_FFFFFF, hankaku + '1' * 16);
+    putfont8(binfo->vram, binfo->scrnx, 48, 8, COL8_FFFFFF, hankaku + '2' * 16);
+    putfont8(binfo->vram, binfo->scrnx, 56, 8, COL8_FFFFFF, hankaku + '3' * 16);
 
     /* 処理が終わったら無限HLT */
     for (;;) {
@@ -184,19 +188,10 @@ void putfont8(char *vram, int xsize, int x, int y, char c, char *font)
     char d;     /* data */
     char *p;
     for (i = 0; i < 16; i++) {
-        p = vram + (y + i) * xsize + x;
+        p = vram + (y + i) * xsize + x;     /* ビデオアクセス用メモリ番地を指定する計算の共通部分をポインタ変数pに代入 */
         d = font[i];
-        /*
-        if ((d & 0x80) != 0) { vram[(y + i) * xsize + x + 0] = c; }
-        if ((d & 0x40) != 0) { vram[(y + i) * xsize + x + 1] = c; }
-        if ((d & 0x20) != 0) { vram[(y + i) * xsize + x + 2] = c; }
-        if ((d & 0x10) != 0) { vram[(y + i) * xsize + x + 3] = c; }
-        if ((d & 0x08) != 0) { vram[(y + i) * xsize + x + 4] = c; }
-        if ((d & 0x04) != 0) { vram[(y + i) * xsize + x + 5] = c; }
-        if ((d & 0x02) != 0) { vram[(y + i) * xsize + x + 6] = c; }
-        if ((d & 0x01) != 0) { vram[(y + i) * xsize + x + 7] = c; }
-        */
 
+        /* ポインタ変数p + 1~7 をしてx軸それぞれに代入できるようにする */
         if ((d & 0x80) != 0) { p[0] = c; }
         if ((d & 0x40) != 0) { p[1] = c; }
         if ((d & 0x20) != 0) { p[2] = c; }

@@ -9,6 +9,8 @@ NASK	 = $(TOOLPATH)nask.exe
 CC1		 = $(TOOLPATH)cc1.exe -I$(INCPATH) -Os -Wall -quiet
 GAS2NASK = $(TOOLPATH)gas2nask.exe -a
 OBJ2BIM  = $(TOOLPATH)obj2bim.exe
+MAKEFONT = $(TOOLPATH)makefont.exe
+BIN2OBJ  = $(TOOLPATH)bin2obj.exe
 BIM2HRB  = $(TOOLPATH)bim2hrb.exe
 EDIMG	 = $(TOOLPATH)edimg.exe
 IMGTOL	 = $(TOOLPATH)imgtol.com
@@ -45,10 +47,18 @@ bootpack.obj :	bootpack.nas Makefile
 naskfunc.obj :	naskfunc.nas Makefile
 				$(NASK) naskfunc.nas naskfunc.obj naskfunc.lst
 
+# フォント（.txt) → バイナリファイル(.bin)
+hankaku.bin :	hankaku.txt Makefile
+				$(MAKEFONT) hankaku.txt hankaku.bin
+
+# バイナリファイル(.bin) →　オブジェクトファイル(.obj)
+hankaku.obj :	hankaku.bin Makefile
+				$(BIN2OBJ) hankaku.bin hankaku.obj _hankaku
+
 # 必要なオブジェクトファイルを全てくっつけてbimファイル(binary image 著者オリジナル2進数イメージファイル)　3MB(3MB*1024=3072K)+64KB=3136KB
-bootpack.bim :	bootpack.obj naskfunc.obj Makefile
+bootpack.bim :	bootpack.obj naskfunc.obj  hankaku.obj Makefile
 				$(OBJ2BIM) @$(RULEFILE) out:bootpack.bim stack:3136k map:bootpack.map \
-					bootpack.obj naskfunc.obj
+					bootpack.obj naskfunc.obj hankaku.obj
 
 bootpack.hrb :	bootpack.bim Makefile
 				$(BIM2HRB) bootpack.bim bootpack.hrb 0
@@ -76,6 +86,9 @@ bootpack :
 
 naskfunc :
 				$(MAKE) naskfunc.obj
+
+hankaku :
+				$(MAKE) hankaku.obj
 
 img :
 				$(MAKE) kusaOS.img

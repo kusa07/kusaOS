@@ -14,6 +14,7 @@ void set_palette(int start, int end, unsigned char *rgb);
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
 void init_screen(char *vram, int x, int y);
 void putfont8(char *vram, int xsize, int x, int y, char c, char *font);
+void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s);
 
 /* パレットカラーの定数宣言 */
 #define COL8_000000     0   /* 0:黒 */
@@ -56,13 +57,10 @@ void HariMain(void)
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);    /* デスクトップの描画 */
 
     /* 文字表示　ABC 123 */
-    //putfont8(binfo->vram, binfo->scrnx,  8, 8, COL8_FFFFFF, hankaku + 0x41 * 16);     /* C言語では'A'は0x41に自動的に変更されるので、逆に0x41を指定しても'A'フォントが表示される */
-    putfont8(binfo->vram, binfo->scrnx,  8, 8, COL8_FFFFFF, hankaku + 'A' * 16);
-    putfont8(binfo->vram, binfo->scrnx, 16, 8, COL8_FFFFFF, hankaku + 'B' * 16);
-    putfont8(binfo->vram, binfo->scrnx, 24, 8, COL8_FFFFFF, hankaku + 'C' * 16);
-    putfont8(binfo->vram, binfo->scrnx, 40, 8, COL8_FFFFFF, hankaku + '1' * 16);
-    putfont8(binfo->vram, binfo->scrnx, 48, 8, COL8_FFFFFF, hankaku + '2' * 16);
-    putfont8(binfo->vram, binfo->scrnx, 56, 8, COL8_FFFFFF, hankaku + '3' * 16);
+    /* putfonts8_ascの引数、*/
+    putfonts8_asc(binfo->vram, binfo->scrnx,  8,  8, COL8_FFFFFF, "ABC 123");
+    putfonts8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_000000, "kusaOS");
+    putfonts8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "kusaOS");
 
     /* 処理が終わったら無限HLT */
     for (;;) {
@@ -203,3 +201,22 @@ void putfont8(char *vram, int xsize, int x, int y, char c, char *font)
     }
     return;
 }
+
+/* 文字列を受け取って文字数分だけputfont8を使って描画する関数 */
+/* 引数は、
+   vram = vramのメモリ番地
+   xsize = 画面のX軸のサイズ
+   x = フォントのX軸の表示位置
+   y = フォントのY軸の表示位置
+   c = 色
+   s = 描画したい文字列
+*/
+void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s)
+{
+    extern char hankaku[4096];  /* hankaku.txtをコンパイルして外部の変数という扱いで読み込むためexternを使っている */
+    for (; *s != 0x00; s++) {
+        putfont8(vram, xsize, x, y, c, hankaku + *s * 16);
+        x += 8;
+    }
+    return;
+} 

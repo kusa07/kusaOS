@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 /* 他のファイルで作った関数がある事をCコンパイラに教える(関数宣言) */
 /* 関数宣言しているので、naskfunc.nasの関数が実行できる */
 
@@ -45,7 +47,7 @@ struct BOOTINFO {
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;     /* asmhead.nasと同じ先頭のメモリ番地を指定している。これは同時にcylsのメモリ番地を示している事にもなる。 */
-    extern char hankaku[4096];
+    char s[40];
 
     init_palette(); /* パレットを設定 */
 
@@ -61,6 +63,8 @@ void HariMain(void)
     putfonts8_asc(binfo->vram, binfo->scrnx,  8,  8, COL8_FFFFFF, "ABC 123");
     putfonts8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_000000, "kusaOS");
     putfonts8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "kusaOS");
+    sprintf(s, "scrnx = %d", binfo->scrnx);
+    putfonts8_asc(binfo->vram, binfo->scrnx, 16, 64, COL8_FFFFFF, s);
 
     /* 処理が終わったら無限HLT */
     for (;;) {
@@ -214,9 +218,12 @@ void putfont8(char *vram, int xsize, int x, int y, char c, char *font)
 void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s)
 {
     extern char hankaku[4096];  /* hankaku.txtをコンパイルして外部の変数という扱いで読み込むためexternを使っている */
-    for (; *s != 0x00; s++) {
+    for (; *s != 0x00; s++) {   /* 文字列の最後（0x00）でなければループを続ける */
+        /* hankakuのメモリ番地 + 文字列の文字コード * 16
+        （hankakuのメモリ番地のフォントのデータが0xNN0~0xNNfに入っているので、16倍している) 
+        */
         putfont8(vram, xsize, x, y, c, hankaku + *s * 16);
-        x += 8;
+        x += 8;     /* x = x + 8 する事で次の文字の場所まで移動する */
     }
     return;
 } 

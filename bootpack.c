@@ -14,9 +14,12 @@ void io_store_eflags(int eflags);
 void init_palette(void);
 void set_palette(int start, int end, unsigned char *rgb);
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
-void init_screen(char *vram, int x, int y);
+void init_screen8(char *vram, int x, int y, char bc );
 void putfont8(char *vram, int xsize, int x, int y, char c, char *font);
 void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s);
+void init_mouse_cursor8(char *mouse, char bc);
+void putblock8_8(char *vram, int vxsize, int pxsize,
+    int pysize, int px0, int py0, char *buf, int bxsize);
 
 /* パレットカラーの定数宣言 */
 #define COL8_000000     0   /* 0:黒 */
@@ -47,7 +50,12 @@ struct BOOTINFO {
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;     /* asmhead.nasと同じ先頭のメモリ番地を指定している。これは同時にcylsのメモリ番地を示している事にもなる。 */
-    char s[40];
+    char s[40], mcursor[256];
+    int mx, my;
+    char bc;                    /* back-color */
+
+    /* 背景色(壁紙) */
+    bc = COL8_000084;   /* 暗い青 */
 
     init_palette(); /* パレットを設定 */
 
@@ -56,15 +64,16 @@ void HariMain(void)
        そのまま指し示されて使える。*/
 
     /* 直接引数に構造体のメンバを示すための矢印記法を使っている */
-    init_screen(binfo->vram, binfo->scrnx, binfo->scrny);    /* デスクトップの描画 */
+    init_screen8(binfo->vram, binfo->scrnx, binfo->scrny, bc);    /* デスクトップの描画 */
 
-    /* 文字表示　ABC 123 */
-    /* putfonts8_ascの引数、*/
-    putfonts8_asc(binfo->vram, binfo->scrnx,  8,  8, COL8_FFFFFF, "ABC 123");
-    putfonts8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_000000, "kusaOS");
-    putfonts8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "kusaOS");
-    sprintf(s, "scrnx = %d", binfo->scrnx);
-    putfonts8_asc(binfo->vram, binfo->scrnx, 16, 64, COL8_FFFFFF, s);
+    /* putfonts8_ascの引数、ビデオアクセス用メモリ番地、画面のX軸、文字列のX軸の開始位置、文字列のY軸の開始位置、色、文字列 */
+
+    mx = (binfo->scrnx - 16) / 2;
+    my = (binfo->scrny - 28 - 16) / 2;
+    init_mouse_cursor8(mcursor, bc);
+    putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
+    sprintf(s, "(%d, %d)", mx, my);
+    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
     /* 処理が終わったら無限HLT */
     for (;;) {
@@ -150,14 +159,18 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 }
 
 /* デスクトップを描画 */
-void init_screen(char *vram, int x, int y )
+void init_screen8(char *vram, int x, int y, char bc )
 {
     /* boxfill8の引数は、（ビデオアクセス用メモリ番地、画面のX軸の大きさ、色、X軸の開始位置、Y軸の開始位置、X軸の終了位置、Y軸の終了位置） */
-    boxfill8(vram, x, COL8_000084,      0,        0, x -  1, y - 29);    /* 背景 */
+    boxfill8(vram, x,          bc,      0,        0, x -  1, y - 29);    /* 背景 (背景の後に色々描画しないと、背景にすべて消される */
+
+    /* 補助線 */
+    boxfill8(vram, x, COL8_848484,      0,   (y - 28) / 2,  x - 1, (y - 28) / 2);   /* 横線 */
+    boxfill8(vram, x, COL8_FFFFFF,      x / 2,   0,     x / 2, y -  1);   /* 縦線 */
 
     boxfill8(vram, x, COL8_008484,      0,   y - 28, x -  1, y - 28);    /* タスクバー 上部横線 その１ */
     boxfill8(vram, x, COL8_848400,      0,   y - 27, x -  1, y - 27);    /* タスクバー 上部横線 その２ */
-    boxfill8(vram, x, COL8_000000,      0,   y - 26, x -  1, y -  1);    /* タスクバー */
+    boxfill8(vram, x, COL8_FFFFFF,      0,   y - 26, x -  1, y -  1);    /* タスクバー */
 
     boxfill8(vram, x, COL8_C6C6C6,      3,   y - 24,     59, y - 24);   /* OSボタン 上部横線　その１ */
     boxfill8(vram, x, COL8_C6C6C6,      2,   y - 24,      2, y -  4);   /* OSボタン 左縦線 */
@@ -227,3 +240,121 @@ void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s
     }
     return;
 } 
+
+/* マウスの形と色のデータをmcursor[]に代入していく */
+/* 引数は、
+   mouse = マウスのデータを格納する配列（mcursor[]）
+   bc = 背景の色（back-color)
+*/
+void init_mouse_cursor8(char *mouse, char bc)
+{
+    static char cursor[16][16] = {
+         
+        /* 本オリジナルのマウスカーソル */
+
+        /*
+        "**************..",
+        "*OOOOOOOOOOO*...",
+        "*OOOOOOOOOO*....",
+        "*OOOOOOOOO*.....",
+        "*OOOOOOOO*......",
+        "*OOOOOOO*.......",
+        "*OOOOOOO*.......",
+        "*OOOOOOOO*......",
+        "*OOOO**OOO*.....",
+        "*OOO*..*OOO*....",
+        "*OO*....*OOO*...",
+        "*O*......*OOO*..",
+        "**........*OOO*.",
+        "*..........*OOO*",
+        "............*OO*",
+        ".............***"
+       */ 
+       
+        /* kusaOSオリジナルのマウスカーソル */
+
+    /* 
+        "*...............",
+        "*O*.............",
+        "*OO*............",
+        "*OOO*...........",
+        "*OOOO*..........",
+        "*OOOOO*.........",
+        "*OOOOOO*........",
+        "*OOOOOOO*.......",
+        "*OOOOOOOO*......",
+        "***.OO*.*.......",
+        "...*OO*.........",
+        "....*OO*........",
+        "....*OO*........",
+        ".....*OO*.......",
+        ".....*OO*.......",
+        "......**........"
+    */
+
+        /* デバック用 */
+
+        "O..............O",
+        "*O*.............",
+        "*OO*............",
+        "*OOO*...........",
+        "*OOOO*..........",
+        "*OOOOO*.........",
+        "*OOOOOO*........",
+        "*OOOOOOO*.......",
+        "*OOOOOOOO*......",
+        "***.OO*.*.......",
+        "...*OO*.........",
+        "....*OO*........",
+        "....*OO*........",
+        ".....*OO*.......",
+        ".....*OO*.......",
+        "O.....**.......O"
+    };
+
+    int x, y;
+
+    /* 各記号を色に置き換える */
+    for (y = 0; y < 16; y++) {
+        for (x = 0; x < 16; x++) {
+            /* y * 16 はy軸の一行にはx軸が16列あり、
+            つまりy一個の行の中にx16個入っているために、
+            yに16を掛けている。 */
+            if (cursor[y][x] == '*') {
+                mouse[y * 16 + x] = COL8_000000;
+            }
+            if (cursor[y][x] == 'O') {
+                mouse[y * 16 + x] = COL8_FFFFFF;
+            }
+            if (cursor[y][x] == '.') {
+                mouse[y * 16 + x] = bc;
+            }
+        }
+    }
+    return;
+}
+
+/* mcorsor[]のデータをvram[]に書き込む */
+/*引数は、
+   vram = vramのメモリ番地
+   vxsize = 画面のX軸のサイズ
+   pxsize = マウスポインタのX軸のサイズ 
+   pysize = マウスポインタのY軸のサイズ
+   px0 = マウスポインタのX軸の開始位置
+   py0 = マウスポインタのY軸の開始位置
+   buf = マウスポインタの色のデータ
+   bxsize = マウスポインタのX軸のサイズ
+*/
+void putblock8_8(char *vram, int vxsize, int pxsize,
+    int pysize, int px0, int py0, char *buf, int bxsize)
+{
+    int x, y;
+    for (y = 0; y < pysize; y++) {
+        for (x = 0; x < pxsize; x++) {
+            /* init_mouse_cursor8で作ったmouse[]のそれぞれのデータを
+            buf[]としてvram[]に入れていっている。 */
+            vram[(py0 + y) * vxsize + (px0 + x)] = buf[y * bxsize + x];
+        }
+    }
+    return;
+}

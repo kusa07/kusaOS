@@ -46,6 +46,28 @@ struct BOOTINFO {
     char *vram;
 };
 
+/* 構造体でGDT(Global (segment) Descriptor Table)をまとめる */
+struct SEGMENT_DESCRIPTOR {
+    short limit_low, base_low;
+    char base_mid, access_right;
+    char limit_high, base_high;
+};
+
+/* 構造体でIDT(Intrrupt Descriptor Table)をまとめる */
+struct GATE_DESCRIPTOR {
+    short offset_low, selector;
+    char dw_count, access_right;
+    short offset_high;
+};
+
+/* GDTとIDTで使う関数の宣言 */
+void init_gdtidt(void);
+void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar);
+void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
+void load_gdtr(int limit, int addr);
+void load_idtr(int limit, int addr);
+
+
 
 void HariMain(void)
 {
@@ -54,25 +76,33 @@ void HariMain(void)
     int mx, my;
     char bc;                    /* back-color */
 
-    /* 背景色(壁紙) */
-    bc = COL8_000084;   /* 暗い青 */
+    init_gdtidt();
 
     init_palette(); /* パレットを設定 */
+
+    /* 背景色(壁紙) */
+    bc = COL8_000084;   /* 暗い青 */
 
     /* asmhead.nasで宣言したメモリ番地（BOOTINFO）の先頭番地を読み込んで、
        後に続くメモリ番地の配置は構造体BOOTINFOと同じ間隔（構造体で宣言した型分のバイトが予約されるため）なので、
        そのまま指し示されて使える。*/
 
-    /* 直接引数に構造体のメンバを示すための矢印記法を使っている */
-    init_screen8(binfo->vram, binfo->scrnx, binfo->scrny, bc);    /* デスクトップの描画 */
-
-    /* putfonts8_ascの引数、ビデオアクセス用メモリ番地、画面のX軸、文字列のX軸の開始位置、文字列のY軸の開始位置、色、文字列 */
-
-    mx = (binfo->scrnx - 16) / 2;
-    my = (binfo->scrny - 28 - 16) / 2;
+    /* デスクトップの描画 */
+    init_screen8(binfo->vram, binfo->scrnx, binfo->scrny, bc);   /* 直接引数に構造体のメンバを示すための矢印記法を使っている */
+    /* マウスカーソルの色や形の設定 */
     init_mouse_cursor8(mcursor, bc);
+
+    mx = (binfo->scrnx - 16) / 2;       /* マウスのX軸の開始位置 */
+    my = (binfo->scrny - 28 - 16) / 2;  /* マウスのY軸の開始位置 */
+
+    /* マウスカーソルの描画 */
     putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
+
+    /* マウスの位置を画面に表示するためにメモリに書き出す */
     sprintf(s, "(%d, %d)", mx, my);
+
+    /* マウスの位置を画面に描画 */
+    /* putfonts8_ascの引数、ビデオアクセス用メモリ番地、画面のX軸、文字列のX軸の開始位置、文字列のY軸の開始位置、色、文字列 */
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 
     /* 処理が終わったら無限HLT */
@@ -356,5 +386,62 @@ void putblock8_8(char *vram, int vxsize, int pxsize,
             vram[(py0 + y) * vxsize + (px0 + x)] = buf[y * bxsize + x];
         }
     }
+    return;
+}
+
+void init_gdtidt(void)
+{
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) 0x00270000;
+    struct GATE_DESCRIPTOR    *idt = (struct GATE_DESCRIPTOR    *) 0x0026f800;
+    int i;
+
+    /* GDTの初期化 */
+    for (i = 0; i < 8192; i++) {
+        set_segmdesc(gdt + i, 0, 0, 0);
+    }
+    set_segmdesc(gdt + 1, 0xffffffff, 0x00000000, 0x4092);
+    set_segmdesc(gdt + 2, 0x0007ffff, 0x00280000, 0x409a);
+    load_gdtr(0xffff, 0x00270000);
+
+    /* IDTの初期化 */
+    for (i = 0; i < 256; i++) {
+        set_gatedesc(idt + i, 0, 0, 0);
+    }
+    load_idtr(0x7ff, 0x0026f800);
+
+    return;
+}
+
+/*Segment Descriptorをセットするための関数 */
+/* 引数は、
+    *sd   = セグメントディスクリプタのメモリ番地
+    limit = セグメントディスクリプタのリミット値
+    base  = セグメントディスクリプタのベースアドレス値
+    ar    = アクセス権のフラグコントロールのための値
+*/
+void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar)
+{
+    if (limit > 0xfffff) {
+        ar |= 0x8000;
+        limit /= 0x1000;
+    }
+    sd->limit_low       = limit & 0xffff;
+    sd->base_low        = base & 0xffff;
+    sd->base_mid        = (base >> 16) & 0xff;
+    sd->access_right    = ar & 0xff;
+    sd->limit_high      = ((limit >> 16) & 0x0f) | ((ar >> 8) & 0xf0);
+    sd ->base_high      = (base >> 24) & 0xff;
+
+    return;
+}
+
+void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar)
+{
+    gd->offset_low      = offset & 0xffff;
+    gd->selector        = selector;
+    gd->dw_count        = (ar >> 8) & 0xff;
+    gd->access_right    = ar & 0xff;
+    gd->offset_high     = (offset >> 16) & 0xffff;
+
     return;
 }

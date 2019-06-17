@@ -8,7 +8,7 @@ OSイメージファイルの中身
     # 大雑把に下記のイメージ
     OS.img = ipl10.nas + OS.sys
     OS.sys = asmhead.nas + bootpack.hrb
-    bootpack.hrb = naskfunc.nas + bootpack.c + hankaku.txt
+    bootpack.hrb = naskfunc.nas + bootpack.c + hankaku.txt + graphic.c + dsctbl.c
     
     # OS.img(FDDイメージ)のバイナリファイルの中身の配置
     0x0000-0000     ipl10.nasが入る

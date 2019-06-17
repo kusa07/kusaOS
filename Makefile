@@ -1,9 +1,12 @@
 # 変数設定
 OSNAME   = kusaOS
 
+OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj
+
 TOOLPATH = ../z_tools/
 INCPATH  = $(TOOLPATH)/haribote/
 RULEFILE = $(INCPATH)haribote.rul
+
 MAKE     = $(TOOLPATH)make.exe -r
 NASK	 = $(TOOLPATH)nask.exe
 CC1		 = $(TOOLPATH)cc1.exe -I$(INCPATH) -Os -Wall -quiet
@@ -23,6 +26,8 @@ default :
 				$(MAKE) img
 
 # ファイル生成規則
+#(生成規則になければ、一般規則の順で確認される)
+# 一般規則を適応したくない場合には、生成規則の方に書けば、こちらが優先される。
 
 # nask → バイナリファイル(.bin)
 ipl10.bin :		ipl10.nas Makefile
@@ -31,24 +36,6 @@ ipl10.bin :		ipl10.nas Makefile
 # nask → バイナリファイル(.bin)
 asmhead.bin :	asmhead.nas Makefile
 				$(NASK) asmhead.nas asmhead.bin asmhead.lst
-
-# メインのファイル(C言語)
-# C言語(.c) → GNUアセンブラ(.gas)
-bootpack.gas :	bootpack.c Makefile
-				$(CC1) -o bootpack.gas bootpack.c
-
-# GNUアセンブラ(.gas) → nask(.nas)
-bootpack.nas :	bootpack.gas Makefile
-				$(GAS2NASK) bootpack.gas bootpack.nas
-
-# nask(.nas) → オブジェクトファイル(.obj)
-bootpack.obj :	bootpack.nas Makefile
-				$(NASK) bootpack.nas bootpack.obj bootpack.lst
-
-# naskの関数
-# nask(.nas) → オブジェクトファイル(.obj)
-naskfunc.obj :	naskfunc.nas Makefile
-				$(NASK) naskfunc.nas naskfunc.obj naskfunc.lst
 
 # フォントファイル
 # フォント（.txt) → バイナリファイル(.bin)
@@ -59,36 +46,11 @@ hankaku.bin :	hankaku.txt Makefile
 hankaku.obj :	hankaku.bin Makefile
 				$(BIN2OBJ) hankaku.bin hankaku.obj _hankaku
 
-# 画面描画関係(C言語)
-# GNUアセンブラ(.gas) → nask(.nas)
-graphic.gas :	graphic.c Makefile
-				$(CC1) -o graphic.gas graphic.c
-
-# GNUアセンブラ(.gas) → nask(.nas)
-graphic.nas :	graphic.gas Makefile
-				$(GAS2NASK) graphic.gas graphic.nas
-
-# nask(.nas) → オブジェクトファイル(.obj)
-graphic.obj :	graphic.nas Makefile
-				$(NASK) graphic.nas graphic.obj graphic.lst
-
-# GDTやIDT関係(C言語)
-# GNUアセンブラ(.gas) → nask(.nas)
-dsctbl.gas :	dsctbl.c Makefile
-				$(CC1) -o dsctbl.gas dsctbl.c
-
-# GNUアセンブラ(.gas) → nask(.nas)
-dsctbl.nas :	dsctbl.gas Makefile
-				$(GAS2NASK) dsctbl.gas dsctbl.nas
-
-# nask(.nas) → オブジェクトファイル(.obj)
-dsctbl.obj :	dsctbl.nas Makefile
-				$(NASK) dsctbl.nas dsctbl.obj dsctbl.lst
-
 # 必要なオブジェクトファイルを全てくっつけてbimファイル(binary image 著者オリジナル2進数イメージファイル)　3MB(3MB*1024=3072K)+64KB=3136KB
-bootpack.bim :	bootpack.obj naskfunc.obj  hankaku.obj graphic.obj dsctbl.obj Makefile
+# 3MB(3072KB) + 64KB = 3136KB
+bootpack.bim :	$(OBJS_BOOTPACK) Makefile
 				$(OBJ2BIM) @$(RULEFILE) out:bootpack.bim stack:3136k map:bootpack.map \
-					bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj
+					$(OBJS_BOOTPACK)
 
 # バイナリイメージ(bim) → hrbファイル
 bootpack.hrb :	bootpack.bim Makefile
@@ -104,6 +66,18 @@ $(OSNAME).img :	ipl10.bin	$(OSNAME).sys Makefile
 					wbinimg src:ipl10.bin len:512 from:0 to:0 \
 					copy from:$(OSNAME).sys to:@: \
 					imgout:$(OSNAME).img
+
+# 一般規則
+#(生成規則になければ、一般規則の順で確認される)
+
+%.gas :			%.c Makefile
+				$(CC1) -o $*.gas $*.c
+
+%.nas :			%.gas Makefile
+				$(GAS2NASK) $*.gas $*.nas
+
+%.obj :			%.nas Makefile
+				$(NASK) $*.nas $*.obj $*.lst
 
 # コマンド
 

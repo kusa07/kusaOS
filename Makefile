@@ -95,15 +95,15 @@ bootpack.hrb :	bootpack.bim Makefile
 				$(BIM2HRB) bootpack.bim bootpack.hrb 0
 
 # asmhead + bootpack + kusaOS
-kusaOS.sys :	asmhead.bin bootpack.hrb Makefile
-				copy /B asmhead.bin+bootpack.hrb kusaOS.sys
+$(OSNAME).sys :	asmhead.bin bootpack.hrb Makefile
+				copy /B asmhead.bin+bootpack.hrb $(OSNAME).sys
 
 # OSイメージファイル
-kusaOS.img :	ipl10.bin	kusaOS.sys Makefile
+$(OSNAME).img :	ipl10.bin	$(OSNAME).sys Makefile
 				$(EDIMG) imgin:../z_tools/fdimg0at.tek \
 					wbinimg src:ipl10.bin len:512 from:0 to:0 \
-					copy from:kusaOS.sys to:@: \
-					imgout:kusaOS.img
+					copy from:$(OSNAME).sys to:@: \
+					imgout:$(OSNAME).img
 
 # コマンド
 
@@ -130,17 +130,17 @@ dsctbl :
 				$(MAKE) dsctbl.obj
 
 img :
-				$(MAKE) kusaOS.img
+				$(MAKE) $(OSNAME).img
 
 # イメージ起動コマンド
 run :		
 				$(MAKE) img
-				$(COPY) kusaOS.img ..\z_tools\qemu\fdimage0.bin
+				$(COPY) $(OSNAME).img ..\z_tools\qemu\fdimage0.bin
 				$(MAKE) -C ../z_tools/qemu
 
 install :
 				$(MAKE) img
-				$(IMGTOL) w a: kusaOS.img
+				$(IMGTOL) w a: $(OSNAME).img
 
 # 不要ファイル削除コマンド
 clean :
@@ -154,8 +154,8 @@ clean :
 				$(DEL)  bootpack.map
 				$(DEL)  bootpack.bim
 				$(DEL)  bootpack.hrb
-				$(DEL) 	kusaOS.sys
+				$(DEL) 	$(OSNAME).sys
 
 src_only :
 				$(MAKE) clean
-				$(DEL)  kusaOS.img
+				$(DEL)  $(OSNAME).img

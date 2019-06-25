@@ -7,8 +7,8 @@ void load_idtr(int limit, int addr);
 
 void init_gdtidt(void)
 {
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    struct GATE_DESCRIPTOR    *idt = (struct GATE_DESCRIPTOR    *) ADR_IDT;
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;     /* GDTの開始位置メモリ番地を指定 */
+    struct GATE_DESCRIPTOR    *idt = (struct GATE_DESCRIPTOR    *) ADR_IDT;     /* IDTの開始位置メモリ番地を指定 */
     int i;
 
     /* GDTの初期化 */
@@ -37,16 +37,18 @@ void init_gdtidt(void)
 */
 void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar)
 {
-    if (limit > 0xfffff) {
-        ar |= 0x8000;
-        limit /= 0x1000;
+    if (limit > 0xfffff) {  /* limitが20bitより大きいかを確認（大きければG-bitを立てる) */
+        ar |= 0x8000;       /* G-bitのフラグを立てる(ページ単位が4KBになる) */
+        limit /= 0x1000;    /* G-bitが立つと1bitが4KBで解釈されるため、4KB(4096 → 0x1000)で割る */
     }
-    sd->limit_low       = limit & 0xffff;
-    sd->base_low        = base & 0xffff;
-    sd->base_mid        = (base >> 16) & 0xff;
-    sd->access_right    = ar & 0xff;
-    sd->limit_high      = ((limit >> 16) & 0x0f) | ((ar >> 8) & 0xf0);
-    sd ->base_high      = (base >> 24) & 0xff;
+    sd->limit_low       = limit & 0xffff;       /* 16bitを＆演算子で取り出している */
+    sd->base_low        = base & 0xffff;        /* 16bitを＆演算子で取り出している */
+    sd->base_mid        = (base >> 16) & 0xff;  /* base_lowの隣の8bitを入れるため、16bitシフトして&演算子で8bit取り出している */
+    //sd->base_mid        = base & 0xff0000;    /* この形でも同じこと */
+    sd->access_right    = ar & 0xff;            /* 16bitを＆演算子で取り出している */
+    sd->limit_high      = ((limit >> 16) & 0x0f) | ((ar >> 8) & 0xf0);  /* limit_highは下位4bitがlimit値の上位4bitを入れ、上位4bitには拡張アクセス権を入れている。 */
+    sd ->base_high      = (base >> 24) & 0xff;  /* base_low(16bit)とbase_mid(8bit)をすでに代入済みなので、その分の24bitを右シフトして、残りの8bitを入れる。 */
+    //sd ->base_high      = base & 0xff000000;  /* この形でも同じこと */
 
     return;
 }

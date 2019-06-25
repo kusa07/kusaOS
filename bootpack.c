@@ -10,19 +10,18 @@ void HariMain(void)
     int mx, my;
     char bc;                    /* back-color */
 
+    /* GDT,IDTの初期化 */
     init_gdtidt();
 
-    init_palette(); /* パレットを設定 */
+    /* パレットを設定 */
+    init_palette();
 
     /* 背景色(壁紙) */
     bc = COL8_000084;   /* 暗い青 */
 
-    /* asmhead.nasで宣言したメモリ番地（BOOTINFO）の先頭番地を読み込んで、
-       後に続くメモリ番地の配置は構造体BOOTINFOと同じ間隔（構造体で宣言した型分のバイトが予約されるため）なので、
-       そのまま指し示されて使える。*/
-
     /* デスクトップの描画 */
     init_screen8(binfo->vram, binfo->scrnx, binfo->scrny, bc);   /* 直接引数に構造体のメンバを示すための矢印記法を使っている */
+
     /* マウスカーソルの色や形の設定 */
     init_mouse_cursor8(mcursor, bc);
 

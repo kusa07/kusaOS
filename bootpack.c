@@ -13,6 +13,9 @@ void HariMain(void)
     /* GDT,IDTの初期化 */
     init_gdtidt();
 
+    /* PICの初期化 */
+    init_pic();
+
     /* パレットを設定 */
     init_palette();
 

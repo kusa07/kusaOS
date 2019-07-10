@@ -2,8 +2,8 @@
 
 #include "bootpack.h"
 
-/* PIC初期化 */
 void init_pic(void)
+/* PIC初期化 */
 {
     /*
         PIC(Programmable Interrupt Controller)
@@ -28,4 +28,36 @@ void init_pic(void)
     io_out8( PIC0_IMR, 0xfb    );   /* スレーブPICが繋がっているIRQ2のみマスクを解除 */
     io_out8( PIC1_IMR, 0xff    );   /* 全ポートをマスク */
 
+    return;
+}
+
+void inthandler21(int *esp)
+/* PS/2キーボードからの割り込み */
+/* キーボード割り込みがあった時に、その旨のメッセージを表示する */
+{
+    struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
+    boxfill8(binfo->vram, binfo->scrnx, COL8_000000, 0, 0, 32 * 8 - 1, 15);
+    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, "INT 21 (IRQ-1) : PS/2 keyboard");
+    for (;;) {
+        io_hlt();
+    }
+}
+
+void inthandler2c(int *esp)
+/* PS/2マウスからの割り込み */
+/* マウスからの割り込みがあった時に、その旨のメッセージを表示する */
+{
+    struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
+    boxfill8(binfo->vram, binfo->scrnx, COL8_000000, 0, 0, 32 * 8 - 1, 15);
+    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, "INT 2C (IRQ-12) : PS/2 mouse");
+    for (;;) {
+        io_hlt();
+    }
+}
+
+void inthandler27(int *esp)
+/* PIC0からの不完全割り込み対策 */
+{
+    io_out8(PIC0_OCW2, 0x67);
+    return;
 }

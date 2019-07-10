@@ -15,6 +15,7 @@ void HariMain(void)
 
     /* PICの初期化 */
     init_pic();
+    io_sti();
 
     /* パレットを設定 */
     init_palette();
@@ -40,6 +41,10 @@ void HariMain(void)
     /* マウスの位置を画面に描画 */
     /* putfonts8_ascの引数、ビデオアクセス用メモリ番地、画面のX軸、文字列のX軸の開始位置、文字列のY軸の開始位置、色、文字列 */
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
+
+    /* 割り込みマスクをキーボード(IRQ1)とマウス(IRQ12)のところだけ解除 */
+    io_out8(PIC0_IMR, 0xf9);    /* 0xf9 = 11111001でIRQ1とPIC1がカスケード接続されているIRQ2のマスクを解除 */
+    io_out8(PIC1_IMR, 0xef);    /* 0xef = 11101111でIRQ8から割り振られているため、5bit目がIRQ12で、そのマスクを解除 */
 
     /* 処理が終わったら無限HLT */
     for (;;) {

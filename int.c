@@ -3,7 +3,6 @@
 #include "bootpack.h"
 #include <stdio.h>
 
-char bc_proto = COL8_000084;    /* 背景の色をグローバル変数などでbc変数で統一したいが、上手くいかなかった。 */
 
 void init_pic(void)
 /* PIC初期化 */
@@ -47,8 +46,7 @@ void inthandler21(int *esp)
     data = io_in8(PORT_KEYDAT);     /* キーボードのデータを受け取ってdataに入れる */
 
     sprintf(s, "%02X", data);       /* dataの内容をsのメモリ番地に置く */
-    // boxfill8(binfo->vram, binfo->scrnx, COL8_000084, 0, 16, 15, 31);
-    boxfill8(binfo->vram, binfo->scrnx, bc_proto, 0, 16, 15, 31);
+    boxfill8(binfo->vram, binfo->scrnx, bc, 0, 16, 15, 31);
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
 
     return;

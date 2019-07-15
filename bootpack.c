@@ -3,12 +3,15 @@
 #include "bootpack.h"
 #include <stdio.h>
 
+/* 背景色(壁紙) */
+char bc = COL8_000084;   /* back-color 暗い青 */
+
+
 void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;     /* asmhead.nasと同じ先頭のメモリ番地を指定している。これは同時にcylsのメモリ番地を示している事にもなる。 */
     char s[40], mcursor[256];
     int mx, my;
-    char bc;                    /* back-color */
 
     /* GDT,IDTの初期化 */
     init_gdtidt();
@@ -20,8 +23,6 @@ void HariMain(void)
     /* パレットを設定 */
     init_palette();
 
-    /* 背景色(壁紙) */
-    bc = COL8_000084;   /* 暗い青 */
 
     /* デスクトップの描画 */
     init_screen8(binfo->vram, binfo->scrnx, binfo->scrny, bc);   /* 直接引数に構造体のメンバを示すための矢印記法を使っている */

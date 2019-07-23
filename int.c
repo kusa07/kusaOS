@@ -35,19 +35,20 @@ void init_pic(void)
 
 #define PORT_KEYDAT     0x0060
 
+struct KEYBUF keybuf;
+
 void inthandler21(int *esp)
 /* PS/2キーボードからの割り込み */
 /* キーボード割り込みがあった時に、その旨のメッセージを表示する */
 {
-    struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-    unsigned char data, s[4];
+    unsigned char data;
 
     io_out8(PIC0_OCW2, 0x61);       
     data = io_in8(PORT_KEYDAT);     /* キーボードのデータを受け取ってdataに入れる */
-
-    sprintf(s, "%02X", data);       /* dataの内容をsのメモリ番地に置く */
-    boxfill8(binfo->vram, binfo->scrnx, bc, 0, 16, 15, 31);
-    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
+    if (keybuf.flag == 0) {         /* 0でkeybuf.dataに文字列が入っていない状態 */
+        keybuf.data = data;
+        keybuf.flag = 1;            /* 1でkeybuf.dataに文字列が入っている事を表す */
+    }
 
     return;
 }

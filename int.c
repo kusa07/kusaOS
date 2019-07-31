@@ -45,9 +45,9 @@ void inthandler21(int *esp)
 
     io_out8(PIC0_OCW2, 0x61);       
     data = io_in8(PORT_KEYDAT);     /* キーボードのデータを受け取ってdataに入れる */
-    if (keybuf.flag == 0) {         /* 0でkeybuf.dataに文字列が入っていない状態 */
-        keybuf.data = data;
-        keybuf.flag = 1;            /* 1でkeybuf.dataに文字列が入っている事を表す */
+    if (keybuf.next < 32) {         
+        keybuf.data[keybuf.next] = data;
+        keybuf.next++;
     }
 
     return;

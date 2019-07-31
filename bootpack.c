@@ -11,7 +11,7 @@ void HariMain(void)
 {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;     /* asmhead.nasと同じ先頭のメモリ番地を指定している。これは同時にcylsのメモリ番地を示している事にもなる。 */
     char s[40], mcursor[256];
-    int mx, my, i;
+    int mx, my, i, j;
 
     /* GDT,IDTの初期化 */
     init_gdtidt();
@@ -54,11 +54,17 @@ void HariMain(void)
     /* 変数に文字列があれば書き出す、を繰り返し確認する。 */
     for (;;) {
         io_cli();                   /* 割り込み処理を禁止する */
-        if (keybuf.flag == 0) {     /* 特に変数に文字が来てなければ */
+        if (keybuf.next == 0) {     /* 特に変数に文字が来てなければ */
             io_stihlt();            /* 割り込みを許可しHLTT */
         } else {
-            i = keybuf.data;        /* 来ているデータを変数に格納 */
-            keybuf.flag = 0;        /* フラグを0にして変数がからであることを表す */
+            i = keybuf.data[0];     /* 来ているデータを変数に格納 */
+            keybuf.next--;          /* 一文字変数に渡したので、カウンタも減らしておく */
+
+            /* 配列内の値をすべて一つ前の配列へずらす */
+            for (j = 0; j < keybuf.next; j++) {
+                keybuf.data[j] = keybuf.data[j + 1];
+            }
+
             io_sti();               /* 割り込み許可 */
             sprintf(s, "%02X", i);  /* 変数に格納されている文字列をsのメモリ番地に置く */
 
